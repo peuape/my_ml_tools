@@ -3,13 +3,12 @@ import numpy as np
 # checks if the input is a numpy array. Makes sure the array is 2-dimensional
 def check_type(X):
     if type(X) != np.ndarray:
-        raise TypeError("The input has to be a numpy array.")
+        raise TypeError("The input must be a numpy array.")
     if len(X.shape) == 1:
         return X.reshape(-1, 1)
     return X
 
 class linear_model:
-# linear regression class
     class LinearRegression:
         def __init__(self, fit_intercept=True):
             self.coef_ = None
@@ -22,16 +21,13 @@ class linear_model:
             y = check_type(y)
             if self.fit_intercept:
                 X = np.hstack([np.ones((X.shape[0], 1)), X])
-
             self.w = np.dot(np.linalg.pinv(X), y) #Calculate MLE for w
-
             if self.fit_intercept:
                 self.coef_ = self.w[1:]
                 self.intercept_ = self.w[0]               
             else:
                 self.coef_ = self.w
             return self
-
 
         def predict(self, X):
             X = check_type(X)
@@ -45,6 +41,49 @@ class linear_model:
             residual_ss = np.sum((self.predict(X) - y)**2)
             total_ss = np.sum((y - np.mean(y))**2)
             return 1 - residual_ss/total_ss
+    
+    class Ridge:
+        def __init__(self, alpha=1.0, fit_intercept=True):
+            self.coef_ = None
+            self.intercept_ = None
+            self.w = None
+            self.fit_intercept = fit_intercept
+            if alpha < 0:
+                raise ValueError("alpha must be non-negative.")
+            self.alpha = alpha
+
+        def fit(self, X, y):
+            if self.alpha == 0: # If alpha = 0, then ridge regression is equivalent to OLS.
+                linreg = linear_model.LinearRegression(fit_intercept=self.fit_intercept)
+                linreg.fit(X, y)
+            else:
+                X = check_type(X)
+                y = check_type(y)
+                y.reshape(-1,)
+                if self.fit_intercept:
+                    X = np.hstack([np.ones((X.shape[0], 1)), X])
+                    self.w = np.dot(np.dot(np.linalg.inv( np.dot(np.transpose(X),X)+self.alpha*np.identity(X.shape[1])), np.transpose(X)), y) #Calculate MLE for w
+                
+            if self.fit_intercept:
+                self.coef_ = self.w[1:]
+                self.intercept_ = self.w[0]   
+            else:
+                self.coef_ = self.w
+            return self
+        
+        def predict(self, X):
+            X = check_type(X)
+            if self.fit_intercept:  
+                X = np.hstack([np.ones((X.shape[0], 1)), X])
+            return np.dot(X, self.w)
+    
+        def score(self, X, y):
+            X = check_type(X)
+            y = check_type(y)
+            residual_ss = np.sum((self.predict(X) - y)**2)
+            total_ss = np.sum((y - np.mean(y))**2)
+            return 1 - residual_ss/total_ss
+            
             
 
 # class for polynomial transformation
@@ -70,12 +109,12 @@ class model_selection:
             elif 0<train_size and train_size<1:
                 test_size = 1 - train_size
             else:
-                raise Exception("The range of train_size is (0,1).")
+                raise ValueError("The range of train_size is (0,1).")
         else:
             if 0<test_size and test_size<1:
                 pass
             else:
-                raise Exception("The range of test_size is (0,1).")
+                raise ValueError("The range of test_size is (0,1).")
         
         np.random.seed(random_state) #Allows np.random to reproduce the same result for the same random_state
         data1 = arrays[0]
@@ -109,7 +148,7 @@ class model_selection:
             cv = 5
 
         if len(X)<cv:
-            raise Exception("The data size has to be larger than cv.")
+            raise Exception("The data size must be larger than cv.")
 
         combined_data = np.hstack([X, y]) #Combine data1 and data2 to shuffle them in a synchronised fashion when shuffle==True
         if shuffle==True:
@@ -135,4 +174,4 @@ class model_selection:
 
         return scores_list
                 
-                
+            

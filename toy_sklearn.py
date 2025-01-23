@@ -8,20 +8,32 @@ def check_type(X):
         return X.reshape(-1, 1)
     return X
 
-class linear_model:
-    class LinearRegression:
+"""
+The naming convension of the classes, methods, parameters and attributes follows these websites:
+linear_model.LinearRegression: https://scikit-learn.org/1.5/modules/generated/sklearn.linear_model.LinearRegression.html
+linear_model.Ridge: https://scikit-learn.org/1.5/modules/generated/sklearn.linear_model.Ridge.html
+preprocessing.PolynomialFeatures: https://scikit-learn.org/dev/modules/generated/sklearn.preprocessing.PolynomialFeatures.html
+model_selection.train_test_splits: https://scikit-learn.org/1.6/modules/generated/sklearn.model_selection.train_test_split.html
+model_selection.cross_val_score: https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_val_score.html
+"""
+class linear_model: 
+    class LinearRegression: 
         def __init__(self, fit_intercept=True):
             self.coef_ = None
             self.intercept_ = None
             self.w = None
             self.fit_intercept = fit_intercept
+            self.X = None
+            self.y = None
 
         def fit(self, X, y):
-            X = check_type(X)
-            y = check_type(y)
+            self.X = X #assign X and y to the class attributes, so that X and y won't be mutated later.
+            self.y = y
+            self.X = check_type(self.X)
+            self.y = check_type(self.y)
             if self.fit_intercept:
-                X = np.hstack([np.ones((X.shape[0], 1)), X])
-            self.w = np.dot(np.linalg.pinv(X), y) #Calculate MLE for w
+                self.X = np.hstack([np.ones((self.X.shape[0], 1)), self.X])
+            self.w = np.dot(np.linalg.pinv(self.X), self.y) #Calculate MLE for w
             if self.fit_intercept:
                 self.coef_ = self.w[1:]
                 self.intercept_ = self.w[0]               
@@ -30,16 +42,19 @@ class linear_model:
             return self
 
         def predict(self, X):
-            X = check_type(X)
+            self.X = X
+            self.X = check_type(self.X)
             if self.fit_intercept:  
-                X = np.hstack([np.ones((X.shape[0], 1)), X])
-            return np.dot(X, self.w)
+                self.X = np.hstack([np.ones((self.X.shape[0], 1)), self.X])
+            return np.dot(self.X, self.w)
     
         def score(self, X, y):
-            X = check_type(X)
-            y = check_type(y)
-            residual_ss = np.sum((self.predict(X) - y)**2)
-            total_ss = np.sum((y - np.mean(y))**2)
+            self.X = X
+            self.y = y
+            self.X = check_type(self.X)
+            self.y = check_type(self.y)
+            residual_ss = np.sum((self.predict(self.X) - self.y)**2)
+            total_ss = np.sum((self.y - np.mean(self.y))**2)
             return 1 - residual_ss/total_ss
     
     class Ridge:
@@ -51,18 +66,23 @@ class linear_model:
             if alpha < 0:
                 raise ValueError("alpha must be non-negative.")
             self.alpha = alpha
+            self.X = None
+            self.y = None
 
         def fit(self, X, y):
             if self.alpha == 0: # If alpha = 0, then ridge regression is equivalent to OLS.
                 linreg = linear_model.LinearRegression(fit_intercept=self.fit_intercept)
                 linreg.fit(X, y)
             else:
-                X = check_type(X)
-                y = check_type(y)
-                y.reshape(-1,)
+                self.X = X
+                self.y = y
+                self.X = check_type(self.X)
+                self.y = check_type(self.y)
+                self.y.reshape(-1,)
                 if self.fit_intercept:
-                    X = np.hstack([np.ones((X.shape[0], 1)), X])
-                    self.w = np.dot(np.dot(np.linalg.inv( np.dot(np.transpose(X),X)+self.alpha*np.identity(X.shape[1])), np.transpose(X)), y) #Calculate MLE for w
+                    self.X = np.hstack([np.ones((self.X.shape[0], 1)), self.X])
+                    self.w = np.dot(np.dot(np.linalg.inv( np.dot(np.transpose(self.X),self.X)+self.alpha*np.identity(self.X.shape[1])),
+                                            np.transpose(self.X)), self.y) #Conduct MLE for w
                 
             if self.fit_intercept:
                 self.coef_ = self.w[1:]
@@ -72,16 +92,19 @@ class linear_model:
             return self
         
         def predict(self, X):
-            X = check_type(X)
+            self.X = X  
+            self.X = check_type(self.X)
             if self.fit_intercept:  
-                X = np.hstack([np.ones((X.shape[0], 1)), X])
-            return np.dot(X, self.w)
+                self.X = np.hstack([np.ones((self.X.shape[0], 1)), self.X])
+            return np.dot(self.X, self.w)
     
         def score(self, X, y):
-            X = check_type(X)
-            y = check_type(y)
-            residual_ss = np.sum((self.predict(X) - y)**2)
-            total_ss = np.sum((y - np.mean(y))**2)
+            self.X = X
+            self.y = y
+            self.X = check_type(self.X)
+            self.y = check_type(self.y)
+            residual_ss = np.sum((self.predict(X) - self.y)**2)
+            total_ss = np.sum((self.y - np.mean(self.y))**2)
             return 1 - residual_ss/total_ss
             
             
@@ -89,17 +112,15 @@ class linear_model:
 # class for polynomial transformation
 class preprocessing:
     class PolynomialFeatures:
-        def __init__(self, degree, include_bias=True):
+        def __init__(self, degree):
             self.degree = degree
-            self.include_bias = include_bias
-
-        def transform(self, X):
-            X = check_type(X)
-            if self.include_bias:
-                X_poly = np.hstack([X ** i for i in range(self.degree + 1)]) 
-                return X_poly
-            else:
-                return np.hstack([X ** i for i in range(1, self.degree + 1)])      
+        
+        def fit_transform(self, X, y=None): 
+            self.X = X
+            self.X = check_type(self.X)
+            
+            return np.hstack([self.X ** i for i in range(1, self.degree + 1)])  
+                #Doesn't include the 0th power of X, as this will be done in the fitting process.
 
 class model_selection:
     def train_test_split(*arrays, test_size=None, train_size=None, random_state=None, shuffle=True):
@@ -131,7 +152,6 @@ class model_selection:
             data2 = arrays[1]
             data2 = check_type(data2)
             combined_data = np.hstack([data1, data2]) #Combine data1 and data2 to shuffle them in a synchronised fashion.
-            print(combined_data)
             if shuffle == True:
                 np.random.shuffle(combined_data)
             shuffled_data1 = combined_data[:,:-1*data2.shape[1]] #Separate the data again
@@ -142,36 +162,27 @@ class model_selection:
             data2_train = shuffled_data2[test_data_len:]
             return data1_train, data1_test, data2_train, data2_test
   
-    def cross_val_score(estimator, X, y, cv=None, shuffle=False, random_state=None):
-        model = estimator() #instantiate the model
+    def cross_val_score(estimator, X, y, cv=None):
         if cv == None:
             cv = 5
 
         if len(X)<cv:
             raise Exception("The data size must be larger than cv.")
-
-        combined_data = np.hstack([X, y]) #Combine data1 and data2 to shuffle them in a synchronised fashion when shuffle==True
-        if shuffle==True:
-            np.random.seed(random_state)
-            np.random.shuffle(combined_data) 
-            X = combined_data[:,:-1*y.shape[1]] 
-            y = combined_data[:,-1*y.shape[1]].reshape(-1,1)
         
+        X = check_type(X)
+        y = check_type(y)
+
         scores_list = [] #The list to store the scores for each train-test pair.
         for i in range(cv):
-            if i < cv-1:
-                X_test = X[round(len(X)*i/cv):round(len(X)*(i+1)/cv)].reshape(-1,1)
-                X_train = np.array(list(filter(lambda x: x not in X_test, X))).reshape(-1,1)
-                y_test = y[round(len(y)*i/cv):round(len(y)*(i+1)/cv)].reshape(-1,1)
-                y_train = np.array(list(filter(lambda y: y not in y_test, y))).reshape(-1,1)
-            else:
-                X_test = X[round(len(X)*(cv-1)/cv):]
-                X_train = X[:round(len(X)*(cv-1)/cv)]
-                y_test = y[round(len(y)*(cv-1)/cv):].reshape(-1,1)
-                y_train = y[:round(len(y)*(cv-1)/cv)].reshape(-1,1)
-            score = float(model.fit(X_train, y_train).score(X_train, y_train)) #fit model to data and calculate score
+            start_index = round(len(X) * i / cv)
+            end_index = round(len(X) * (i + 1) / cv)
+            X_test = X[start_index:end_index]
+            X_train = np.vstack((X[:start_index], X[end_index:]))
+            y_test = y[start_index:end_index]
+            y_train = np.vstack((y[:start_index], y[end_index:]))
+            score = float(estimator.fit(X_train, y_train).score(X_test, y_test))
             scores_list.append(score)
-
+            
         return scores_list
                 
             

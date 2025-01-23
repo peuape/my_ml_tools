@@ -1,6 +1,6 @@
 import numpy as np
 
-# checks if the input is a numpy array. Makes sure the array is 2-dimensional
+# check if the input is a numpy array. Make sure the array is 2-dimensional
 def check_type(X):
     if type(X) != np.ndarray:
         raise TypeError("The input must be a numpy array.")
@@ -9,7 +9,7 @@ def check_type(X):
     return X
 
 """
-The naming convension of the classes, methods, parameters and attributes follows these websites:
+The selection and the naming convension of the classes, methods, parameters and attributes follow these websites:
 linear_model.LinearRegression: https://scikit-learn.org/1.5/modules/generated/sklearn.linear_model.LinearRegression.html
 linear_model.Ridge: https://scikit-learn.org/1.5/modules/generated/sklearn.linear_model.Ridge.html
 preprocessing.PolynomialFeatures: https://scikit-learn.org/dev/modules/generated/sklearn.preprocessing.PolynomialFeatures.html
@@ -32,8 +32,8 @@ class linear_model:
             self.X = check_type(self.X)
             self.y = check_type(self.y)
             if self.fit_intercept:
-                self.X = np.hstack([np.ones((self.X.shape[0], 1)), self.X])
-            self.w = np.dot(np.linalg.pinv(self.X), self.y) #Calculate MLE for w
+                self.X = np.hstack([np.ones((self.X.shape[0], 1)), self.X]) #Add a column of 1s to X
+            self.w = np.dot(np.linalg.pinv(self.X), self.y) #Conduct MLE for w
             if self.fit_intercept:
                 self.coef_ = self.w[1:]
                 self.intercept_ = self.w[0]               
@@ -53,9 +53,9 @@ class linear_model:
             self.y = y
             self.X = check_type(self.X)
             self.y = check_type(self.y)
-            residual_ss = np.sum((self.predict(self.X) - self.y)**2)
-            total_ss = np.sum((self.y - np.mean(self.y))**2)
-            return 1 - residual_ss/total_ss
+            residual_ss = np.sum((self.predict(self.X) - self.y)**2) #Calculate the residual sum of squares
+            total_ss = np.sum((self.y - np.mean(self.y))**2) #Calculate the total sum of squares
+            return 1 - residual_ss/total_ss #Calculate the R^2 score
     
     class Ridge:
         def __init__(self, alpha=1.0, fit_intercept=True):
@@ -79,7 +79,7 @@ class linear_model:
                 self.X = check_type(self.X)
                 self.y = check_type(self.y)
                 self.y.reshape(-1,)
-                if self.fit_intercept:
+                if self.fit_intercept: 
                     self.X = np.hstack([np.ones((self.X.shape[0], 1)), self.X])
                     self.w = np.dot(np.dot(np.linalg.inv( np.dot(np.transpose(self.X),self.X)+self.alpha*np.identity(self.X.shape[1])),
                                             np.transpose(self.X)), self.y) #Conduct MLE for w
